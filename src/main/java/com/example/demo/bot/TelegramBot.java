@@ -27,8 +27,8 @@ public class TelegramBot extends AbilityBot { // todo https://www.baeldung.com/s
     private final FriendService friendService;
 
     @Autowired
-    public TelegramBot(BotConfig botProperties, FriendService friendService) {
-        super(botProperties.getToken(), botProperties.getBotName());
+    public TelegramBot(DefaultBotOptions botOptions, BotConfig botProperties, FriendService friendService) {
+        super(botProperties.getToken(), botProperties.getBotName(), botOptions);
         this.friendService = friendService;
     }
 
@@ -92,9 +92,8 @@ public class TelegramBot extends AbilityBot { // todo https://www.baeldung.com/s
      * ДР
      */
     public Reply bd(){
-        String answer = "Список дней рождений: " + getBd();
-
         Consumer<Update> action = upd -> {
+            String answer = "Список дней рождений: " + getBd();
             StringBuilder message = new StringBuilder(answer);
             sendMessage(upd.getMessage().getChatId(), message.toString());
         };

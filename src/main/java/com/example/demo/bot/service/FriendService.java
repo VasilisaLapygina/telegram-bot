@@ -1,7 +1,7 @@
 package com.example.demo.bot.service;
 
 import com.example.demo.bot.model.Friend;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
-@Service
+@Component
 public class FriendService {
     private static final String FILE_ALL_FRIEND = "friend.yml";
 

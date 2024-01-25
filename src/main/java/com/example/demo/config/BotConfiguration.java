@@ -10,17 +10,17 @@ import org.telegram.telegrambots.meta.ApiContext;
 
 import javax.annotation.PostConstruct;
 
-//@EnableScheduling
-//@ComponentScan(basePackageClasses = BotConfiguration.class)
-//@Configuration
-//public class BotConfiguration {
-//    @PostConstruct
-//    public void runBot(){
-//        ApiContextInitializer.init();
-//    }
-//
-//    @Bean
-//    public DefaultBotOptions defaultBotOptions() {
-//        return ApiContext.getInstance(DefaultBotOptions.class);
-//    }
-//}
+@EnableScheduling
+@ComponentScan(basePackageClasses = BotConfiguration.class)
+@Configuration
+public class BotConfiguration {
+    @PostConstruct
+    public void runBot(){
+        ApiContextInitializer.init();
+    }
+
+    @Bean
+    public DefaultBotOptions defaultBotOptions() {
+        return ApiContext.getInstance(DefaultBotOptions.class);
+    }
+}

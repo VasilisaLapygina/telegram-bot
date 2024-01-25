@@ -43,8 +43,8 @@ public class Predicates {
     public static Predicate<Update> isMeeting() {
         return upd -> {
             String message = upd.getMessage().getText();
-            return (message.contains(Command.BD.getName())
-                || message.toLowerCase().contains(Command.BD.getLocalizedLowerCase()));
+            return (message.contains(Command.MEETING.getName())
+                || message.toLowerCase().contains(Command.MEETING.getLocalizedLowerCase()));
         };
     }
 

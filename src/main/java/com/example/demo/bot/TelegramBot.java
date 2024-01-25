@@ -9,26 +9,25 @@ import com.example.demo.config.BotConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.abilitybots.api.bot.AbilityBot;
+import org.telegram.abilitybots.api.bot.BaseAbilityBot;
 import org.telegram.abilitybots.api.objects.Flag;
 import org.telegram.abilitybots.api.objects.Reply;
-import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.logging.BotLogger;
 
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 @Component
 @SuppressWarnings("unused")
-public class TelegramBot extends AbilityBot { // todo https://www.baeldung.com/spring-boot-telegram-bot
+public class TelegramBot extends AbilityBot {
 
     private final FriendService friendService;
 
     @Autowired
-    public TelegramBot(DefaultBotOptions botOptions, BotConfig botProperties, FriendService friendService) {
-        super(botProperties.getToken(), botProperties.getBotName(), botOptions);
+    public TelegramBot(BotConfig botProperties, FriendService friendService) {
+        super(botProperties.getToken(), botProperties.getBotName());
         this.friendService = friendService;
     }
 
@@ -36,7 +35,7 @@ public class TelegramBot extends AbilityBot { // todo https://www.baeldung.com/s
      * Выводит приветственное сообщение и кнопки с доступными командами
      */
     public Reply hello() {
-        Consumer<Update> action = upd -> {
+        BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
             String answer = ". Привет, " + upd.getMessage().getFrom().getFirstName();
             sendMessage(upd.getMessage().getChatId(), Message.HELLO.getText() + answer, Keyboard.getDefaultKeyboard());
         };
@@ -51,7 +50,7 @@ public class TelegramBot extends AbilityBot { // todo https://www.baeldung.com/s
      * Подручный. Выводит все существующие команты с описанием
      */
     public Reply helper(){
-        Consumer<Update> action = upd -> {
+        BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
             StringBuilder message = new StringBuilder("Перечень команд которыми вы можете воспользоваться:\n");
             for (Command value : Command.values()) {
                 message.append(value.getLocalizedLowerCase()).
@@ -76,7 +75,7 @@ public class TelegramBot extends AbilityBot { // todo https://www.baeldung.com/s
         // todo допилить
         String answer = "Вызываю всех @n_hanova @itrealrew @mikhail_kurochkin @user_undef @Anna_Eletsky @Anna_Eletsky @vasilisa_obrubova @test_user_9 @LizaShiryaeva @KamradSirGrey @j_nans @agonyaev @x69760d0a @kochetkova_olesun @ribusick ";
 
-        Consumer<Update> action = upd -> {
+        BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
             StringBuilder message = new StringBuilder(answer);
             sendMessage(upd.getMessage().getChatId(), message.toString());
         };
@@ -92,7 +91,7 @@ public class TelegramBot extends AbilityBot { // todo https://www.baeldung.com/s
      * ДР
      */
     public Reply bd(){
-        Consumer<Update> action = upd -> {
+        BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
             String answer = "Список дней рождений: " + getBd();
             StringBuilder message = new StringBuilder(answer);
             sendMessage(upd.getMessage().getChatId(), message.toString());
@@ -108,9 +107,10 @@ public class TelegramBot extends AbilityBot { // todo https://www.baeldung.com/s
     /**
      * Метод выводит список всех дней рождений
      */
-    public String getBd() {
+    private String getBd() {
         StringBuffer stringBuffer = new StringBuffer();
-        friendService.get().forEach(friend -> stringBuffer.append("\n").append(friend.getName()).append(" ").append(friend.getDr()));
+        friendService.get()
+            .forEach(friend -> stringBuffer.append("\n").append(friend.getName()).append(" ").append(friend.getDr()));
         return stringBuffer.toString();
     }
 
@@ -120,7 +120,7 @@ public class TelegramBot extends AbilityBot { // todo https://www.baeldung.com/s
     public Reply meeting(){
         String answer = "Я не умею(((";
 
-        Consumer<Update> action = upd -> {
+        BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
             StringBuilder message = new StringBuilder(answer);
             sendMessage(upd.getMessage().getChatId(), message.toString());
         };
@@ -144,7 +144,7 @@ public class TelegramBot extends AbilityBot { // todo https://www.baeldung.com/s
         try {
             sender.execute(sendMessage);
         } catch (TelegramApiException e) {
-            BotLogger.error("Unable to send message", e);
+            System.out.println("Unable to send message: " + e);
         }
     }
 
@@ -170,7 +170,7 @@ public class TelegramBot extends AbilityBot { // todo https://www.baeldung.com/s
      * Добавление создателя
      */
     @Override
-    public int creatorId() {
+    public long creatorId() {
         return 0;
     }
 }

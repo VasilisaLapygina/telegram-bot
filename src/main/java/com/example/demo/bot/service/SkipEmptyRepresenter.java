@@ -1,5 +1,6 @@
 package com.example.demo.bot.service;
 
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.Tag;
@@ -10,6 +11,10 @@ import java.util.Map;
 import java.util.Objects;
 
 class SkipEmptyRepresenter extends Representer {
+    public SkipEmptyRepresenter(DumperOptions options) {
+        super(options);
+    }
+
     @Override
     protected NodeTuple representJavaBeanProperty(Object javaBean, Property property, Object propertyValue, Tag customTag) {
         if (isInvalidType(property, propertyValue)) {

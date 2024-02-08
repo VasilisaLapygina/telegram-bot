@@ -64,6 +64,14 @@ public class Predicates {
         };
     }
 
+    public static Predicate<Update> isBlowjob() {
+        return upd -> {
+            String message = upd.getMessage().getText();
+            return (message.contains(Command.BLOWJOB.getName())
+                || message.toLowerCase().contains(Command.BLOWJOB.getLocalizedLowerCase()));
+        };
+    }
+
     public static Predicate<Update> toMe(String botName) {
         return upd -> upd.getMessage().getText().contains("@".concat(botName));
     }

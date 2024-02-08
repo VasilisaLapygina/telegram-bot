@@ -5,6 +5,7 @@ import com.example.demo.bot.component.Keyboard;
 import com.example.demo.bot.component.Message;
 import com.example.demo.bot.component.Predicates;
 import com.example.demo.bot.model.Application;
+import com.example.demo.bot.model.Friend;
 import com.example.demo.config.BotConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -18,20 +19,25 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 @Component
 @SuppressWarnings("unused")
 public class TelegramBot extends AbilityBot {
 
     private final Application application;
+    private final Random random;
 
     @Autowired
-    public TelegramBot(BotConfig botProperties, Application application) {
+    public TelegramBot(BotConfig botProperties, Application application) throws NoSuchAlgorithmException {
         super(botProperties.getToken(), botProperties.getBotName());
         this.application = application;
+        this.random = SecureRandom.getInstanceStrong();
     }
 
     /**
@@ -55,12 +61,11 @@ public class TelegramBot extends AbilityBot {
     public Reply helper(){
         BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
             StringBuilder message = new StringBuilder("Перечень команд которыми вы можете воспользоваться:\n");
-            for (Command value : Command.values()) {
-                message.append(value.getLocalizedLowerCase()).
+            Arrays.stream(Command.values())
+                .filter(Command::isShow)
+                .forEach(value -> message.append(value.getLocalizedLowerCase()).
                     append(" (").append(value.getName()).append(")")
-                    .append(" - ").append(value.getDescription()).append("\n");
-
-            }
+                    .append(" - ").append(value.getDescription()).append("\n"));
             sendMessage(upd.getMessage().getChatId(), message.toString());
         };
 
@@ -75,11 +80,9 @@ public class TelegramBot extends AbilityBot {
      * Тегает всех в комнате
      */
     public Reply all(){
-        String answer = "Вызываю всех \n" + getFriends();
-
         BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
-            StringBuilder message = new StringBuilder(answer);
-            sendMessage(upd.getMessage().getChatId(), message.toString());
+            String answer = "Вызываю всех \n" + getFriends();
+            sendMessage(upd.getMessage().getChatId(), answer);
         };
 
         return Reply.of(action,
@@ -93,7 +96,7 @@ public class TelegramBot extends AbilityBot {
      * Метод выводит список всех пользователей
      */
     private String getFriends() {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder stringBuffer = new StringBuilder();
         application.getFriends()
             .forEach(friend ->
                 stringBuffer.append("\n")
@@ -110,8 +113,7 @@ public class TelegramBot extends AbilityBot {
     public Reply bd(){
         BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
             String answer = "Список дней рождений: \n" + getBd();
-            StringBuilder message = new StringBuilder(answer);
-            sendMessage(upd.getMessage().getChatId(), message.toString());
+            sendMessage(upd.getMessage().getChatId(), answer);
         };
 
         return Reply.of(action,
@@ -125,10 +127,10 @@ public class TelegramBot extends AbilityBot {
      * Метод выводит список всех дней рождений
      */
     private String getBd() {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder stringBuilder = new StringBuilder();
         application.getFriends()
-            .forEach(friend -> stringBuffer.append("\n").append(friend.getName()).append(" ").append(friend.getDr()));
-        return stringBuffer.toString();
+            .forEach(friend -> stringBuilder.append("\n").append(friend.getName()).append(" ").append(friend.getDr()));
+        return stringBuilder.toString();
     }
 
     /**
@@ -184,12 +186,33 @@ public class TelegramBot extends AbilityBot {
         );
     }
 
+    public Reply blowjob() {
+        BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
+            int blowChance = random.nextInt(10);
+            if(blowChance == 9) {
+                List<Friend> friends = application.getFriends();
+                int friendIndex = random.nextInt(friends.size());
+                Friend friendToBlow = friends.get(friendIndex);
+                String message = "Тебе отсосет " + friendToBlow.getNickname();
+                sendMessage(upd.getMessage().getChatId(), message);
+            } else {
+                String message = "Сам отсоси, потом проси!";
+                sendMessage(upd.getMessage().getChatId(), message, null, upd.getMessage().getMessageId());
+            }
+        };
 
+        return Reply.of(action,
+            Flag.MESSAGE,
+            Flag.TEXT,
+            Predicates.isBlowjob()
+        );
+    }
 
-    private void sendMessage(Long chatId, String message, ReplyKeyboard keyboard) {
+    private void sendMessage(Long chatId, String message, ReplyKeyboard keyboard, Integer replyToMessageId) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
         sendMessage.setText(message);
+        sendMessage.setReplyToMessageId(replyToMessageId);
         if(keyboard != null) {
             sendMessage.setReplyMarkup(keyboard);
         }
@@ -198,6 +221,10 @@ public class TelegramBot extends AbilityBot {
         } catch (TelegramApiException e) {
             System.out.println("Unable to send message: " + e);
         }
+    }
+
+    private void sendMessage(Long chatId, String message, ReplyKeyboard keyboard) {
+        sendMessage(chatId, message, keyboard, null);
     }
 
 

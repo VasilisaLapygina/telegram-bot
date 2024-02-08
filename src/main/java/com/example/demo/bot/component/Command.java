@@ -12,7 +12,11 @@ public enum Command {
     ALL("/all","/Все","Команда тегает всех"),
     BD("/birthday","/ДР","Команда выводит список дней рождений"),
 
-    MEETING("/meeting","/Встреча","Команда создает опрос по встрече");
+    MEETING("/meeting","/Встреча","Команда создает опрос по встрече"),
+
+    REGISTRATOIN("/registration","/Регистрация","Команда регистрации нового пользователя"),
+
+    VALENTINE("/valentine","/Валентинка","Отправка валентинки");
 
     private String name;
     private String localizedName;

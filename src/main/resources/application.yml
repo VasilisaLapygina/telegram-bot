@@ -1,3 +1,52 @@
 telegram-bot:
   botName: my_peesduke_bot
   token: 6914704304:AAHq-uqGYPma84FU9IOXRhGkzoyBGhL2XyI
+
+application:
+  mainChat: 13
+  friends:
+    - name: Обрубова Василиса
+      nickname: "@vasilisa_obrubova"
+      dr: 04.04.1997
+    - name: Обрубов Максим
+      nickname: "@user_undef"
+      dr: 05.08.1994
+    - name: Елецкая Анна
+      nickname: "@Anna_Eletsky"
+      dr: 11.07.1998
+    - name: Устинова Анастасия
+      nickname: "@Ustinova_Anastasia1"
+      dr: 26.07.1997
+    - name: Кочеткова Олеся
+      nickname: "@kochetkova_olesun"
+      dr: 29.08
+    - name: Гоняев Андрей
+      nickname: "@agonyaev"
+      dr: 10.06.1994
+    - name: Шопырев Денис
+      nickname: "@test_user_9"
+      dr: 12.10.1997
+    - name: Корнилов Сергей
+      nickname: "@KamradSirGrey"
+      dr: 23.07.1997
+    - name: Ширяева Елизавета
+      nickname: "@LizaShiryaeva"
+      dr: 24.04.1997
+    - name: Родионова Анастасия
+      nickname: "@j_nans"
+      dr: 24.12
+    - name: Черезов Владимир
+      nickname: "@x69760d0a"
+      dr: 24.08
+    - name: Ханова Анастасия
+      nickname: "@n_hanova"
+      dr: "17.10"
+    - name: Туманова Татьяна
+      nickname: "@ribusick"
+      dr: 23.02
+    - name: Курочкин Михаил
+      nickname: "@mikhail_kurochkin"
+      dr: 24.12
+    - name: Пронин Максим
+      nickname: "@itrealrew"
+      dr: 13.09

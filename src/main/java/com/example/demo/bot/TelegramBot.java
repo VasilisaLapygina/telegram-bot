@@ -4,7 +4,7 @@ import com.example.demo.bot.component.Command;
 import com.example.demo.bot.component.Keyboard;
 import com.example.demo.bot.component.Message;
 import com.example.demo.bot.component.Predicates;
-import com.example.demo.bot.service.FriendService;
+import com.example.demo.bot.model.Application;
 import com.example.demo.config.BotConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -14,21 +14,24 @@ import org.telegram.abilitybots.api.objects.Flag;
 import org.telegram.abilitybots.api.objects.Reply;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 @Component
 @SuppressWarnings("unused")
 public class TelegramBot extends AbilityBot {
 
-    private final FriendService friendService;
+    private final Application application;
 
     @Autowired
-    public TelegramBot(BotConfig botProperties, FriendService friendService) {
+    public TelegramBot(BotConfig botProperties, Application application) {
         super(botProperties.getToken(), botProperties.getBotName());
-        this.friendService = friendService;
+        this.application = application;
     }
 
     /**
@@ -72,8 +75,7 @@ public class TelegramBot extends AbilityBot {
      * Тегает всех в комнате
      */
     public Reply all(){
-        // todo допилить
-        String answer = "Вызываю всех @n_hanova @itrealrew @mikhail_kurochkin @user_undef @Anna_Eletsky @Anna_Eletsky @vasilisa_obrubova @test_user_9 @LizaShiryaeva @KamradSirGrey @j_nans @agonyaev @x69760d0a @kochetkova_olesun @ribusick ";
+        String answer = "Вызываю всех \n" + getFriends();
 
         BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
             StringBuilder message = new StringBuilder(answer);
@@ -88,11 +90,26 @@ public class TelegramBot extends AbilityBot {
     }
 
     /**
+     * Метод выводит список всех пользователей
+     */
+    private String getFriends() {
+        StringBuffer stringBuffer = new StringBuffer();
+        application.getFriends()
+            .forEach(friend ->
+                stringBuffer.append("\n")
+                    .append(friend.getNickname())
+                    .append(" (").append(friend.getName()).append(" ) ")
+            );
+        return stringBuffer.toString();
+    }
+
+
+    /**
      * ДР
      */
     public Reply bd(){
         BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
-            String answer = "Список дней рождений: " + getBd();
+            String answer = "Список дней рождений: \n" + getBd();
             StringBuilder message = new StringBuilder(answer);
             sendMessage(upd.getMessage().getChatId(), message.toString());
         };
@@ -109,26 +126,61 @@ public class TelegramBot extends AbilityBot {
      */
     private String getBd() {
         StringBuffer stringBuffer = new StringBuffer();
-        friendService.get()
+        application.getFriends()
             .forEach(friend -> stringBuffer.append("\n").append(friend.getName()).append(" ").append(friend.getDr()));
         return stringBuffer.toString();
     }
 
     /**
-     * Метод создания опроса
+     * Отправка валентинки
      */
-    public Reply meeting(){
-        String answer = "Я не умею(((";
-
+    public Reply valentine() {
         BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
-            StringBuilder message = new StringBuilder(answer);
-            sendMessage(upd.getMessage().getChatId(), message.toString());
+            String message = upd.getMessage().getText();
+
+            String answer = "Вам написали валентинку: \n" ; // todo добавить текст валентинки из смс
+            sendMessage(upd.getMessage().getChatId(), answer); // todo добавить чат
         };
 
         return Reply.of(action,
             Flag.MESSAGE,
             Flag.TEXT,
-            Predicates.isMeeting()
+            Predicates.isValentine()
+        );
+    }
+
+    /**
+     * Обработка нового пользователя
+     */
+    public Reply newUser() {
+        BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
+            List<User> newUser = upd.getMessage().getNewChatMembers();
+            newUser.forEach(u -> {
+                String message =  "Привет, " + u.getFirstName()+ ". Рад тебя видеть!" ;
+                sendMessage(upd.getMessage().getChatId(), message,  Keyboard.getDefaultKeyboard());
+            });
+        };
+        return Reply.of(action,
+            Flag.MESSAGE,
+            upd ->  upd.getMessage().getNewChatMembers() != null);
+    }
+
+    /**
+     * Метод создания опроса
+     */
+    public Reply registration(){
+        String answer = "Спасибо регистрация прошла успешно!";
+
+        BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
+            String message = upd.getMessage().getText();
+            // todo определить пользователя и сохранить чат
+            sendMessage(upd.getMessage().getChatId(), answer);
+        };
+
+        return Reply.of(action,
+            Flag.MESSAGE,
+            Flag.TEXT,
+            Predicates.isRegistration()
         );
     }
 

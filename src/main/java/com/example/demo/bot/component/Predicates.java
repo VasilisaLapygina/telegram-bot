@@ -40,6 +40,14 @@ public class Predicates {
         };
     }
 
+    public static Predicate<Update> isValentine() {
+        return upd -> {
+            String message = upd.getMessage().getText();
+            return (message.contains(Command.VALENTINE.getName())
+                || message.toLowerCase().contains(Command.VALENTINE.getLocalizedLowerCase()));
+        };
+    }
+
     public static Predicate<Update> isMeeting() {
         return upd -> {
             String message = upd.getMessage().getText();
@@ -48,6 +56,13 @@ public class Predicates {
         };
     }
 
+    public static Predicate<Update> isRegistration() {
+        return upd -> {
+            String message = upd.getMessage().getText();
+            return (message.contains(Command.REGISTRATOIN.getName())
+                || message.toLowerCase().contains(Command.REGISTRATOIN.getLocalizedLowerCase()));
+        };
+    }
 
     public static Predicate<Update> toMe(String botName) {
         return upd -> upd.getMessage().getText().contains("@".concat(botName));

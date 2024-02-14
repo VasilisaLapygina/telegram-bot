@@ -13,5 +13,4 @@ import java.util.List;
 @Getter
 public class Application {
     private String mainChat;
-    private List<Friend> friends;
 }

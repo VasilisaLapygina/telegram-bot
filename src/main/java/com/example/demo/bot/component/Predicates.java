@@ -1,8 +1,10 @@
 package com.example.demo.bot.component;
 
+import com.example.demo.bot.model.Friend;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import java.util.List;
 import java.util.function.Predicate;
 
 @Component
@@ -48,6 +50,7 @@ public class Predicates {
         };
     }
 
+
     public static Predicate<Update> isMeeting() {
         return upd -> {
             String message = upd.getMessage().getText();
@@ -69,6 +72,13 @@ public class Predicates {
             String message = upd.getMessage().getText();
             return (message.contains(Command.BLOWJOB.getName())
                 || message.toLowerCase().contains(Command.BLOWJOB.getLocalizedLowerCase()));
+        };
+    }
+
+    public static Predicate<Update> isUser(List<Friend> friends) {
+        return upd -> {
+            String message = upd.getMessage().getText();
+            return friends.stream().anyMatch(friend -> friend.getName().equals(message));
         };
     }
 

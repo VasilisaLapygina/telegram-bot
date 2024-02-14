@@ -6,7 +6,10 @@ import com.example.demo.bot.component.Message;
 import com.example.demo.bot.component.Predicates;
 import com.example.demo.bot.model.Application;
 import com.example.demo.bot.model.Friend;
+import com.example.demo.bot.model.Mode;
 import com.example.demo.config.BotConfig;
+import com.example.demo.dao.FriendDao;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.abilitybots.api.bot.AbilityBot;
@@ -25,18 +28,22 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 @Component
+@Slf4j
 @SuppressWarnings("unused")
 public class TelegramBot extends AbilityBot {
 
     private final Application application;
+    private final FriendDao friendDao;
     private final Random random;
 
     @Autowired
-    public TelegramBot(BotConfig botProperties, Application application) throws NoSuchAlgorithmException {
+    public TelegramBot(BotConfig botProperties, Application application, FriendDao friendDao) throws NoSuchAlgorithmException {
         super(botProperties.getToken(), botProperties.getBotName());
         this.application = application;
+        this.friendDao = friendDao;
         this.random = SecureRandom.getInstanceStrong();
     }
 
@@ -97,7 +104,7 @@ public class TelegramBot extends AbilityBot {
      */
     private String getFriends() {
         StringBuilder stringBuffer = new StringBuilder();
-        application.getFriends()
+        friendDao.findAll()
             .forEach(friend ->
                 stringBuffer.append("\n")
                     .append(friend.getNickname())
@@ -128,10 +135,40 @@ public class TelegramBot extends AbilityBot {
      */
     private String getBd() {
         StringBuilder stringBuilder = new StringBuilder();
-        application.getFriends()
-            .forEach(friend -> stringBuilder.append("\n").append(friend.getName()).append(" ").append(friend.getDr()));
+        friendDao.findAll()
+            .forEach(friend -> stringBuilder.append("\n").append(friend.getName()).append(" ").append(friend.getBirthday()));
         return stringBuilder.toString();
     }
+
+    /**
+     * Отправка валентинки
+     */
+    public Reply valentineSend() {
+        BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
+            String message = upd.getMessage().getText();
+            Friend friend = getFriend(upd.getMessage().getFrom().getUserName());
+            if (friend != null) {
+                if (friend.getMode().equals(Mode.SEND_VALENTINE)) {
+                    Friend recipient = getFriend(friend.getLastCommand());
+                    if (recipient != null) {
+                        String answer = "Вам написали валентинку: \n" + message;
+                        sendMessage(recipient.getChat(), answer, Keyboard.getDefaultKeyboard());
+                        sendMessage(upd.getMessage().getChatId(), "Отправлено!", Keyboard.getDefaultKeyboard());
+                    } else {
+                        sendMessage(upd.getMessage().getChatId(), "Я не могу найти пользователя!", Keyboard.getDefaultKeyboard());
+                    }
+                    friend.setMode(Mode.NONE);
+                    friendDao.save(friend);
+                }
+            }
+        };
+
+        return Reply.of(action,
+            Flag.MESSAGE,
+            Flag.TEXT
+        );
+    }
+
 
     /**
      * Отправка валентинки
@@ -139,9 +176,13 @@ public class TelegramBot extends AbilityBot {
     public Reply valentine() {
         BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
             String message = upd.getMessage().getText();
-
-            String answer = "Вам написали валентинку: \n" ; // todo добавить текст валентинки из смс
-            sendMessage(upd.getMessage().getChatId(), answer); // todo добавить чат
+            Friend friend = getFriend(upd.getMessage().getFrom().getUserName());
+            if (friend != null) {
+                friend.setMode(Mode.VALENTINE);
+                friendDao.save(friend);
+            }
+            String answer = "Выберите человека кнопкой" ;
+            sendMessage(upd.getMessage().getChatId(), answer, Keyboard.getAll(friendDao.findAll().stream().filter(friend1 -> friend1.getChat() != null).collect(Collectors.toList())));
         };
 
         return Reply.of(action,
@@ -150,6 +191,8 @@ public class TelegramBot extends AbilityBot {
             Predicates.isValentine()
         );
     }
+
+
 
     /**
      * Обработка нового пользователя
@@ -170,13 +213,22 @@ public class TelegramBot extends AbilityBot {
     /**
      * Метод создания опроса
      */
-    public Reply registration(){
+    public Reply registration() {
         String answer = "Спасибо регистрация прошла успешно!";
+        String answerError = "Тебя сложно найти и легко потерять! Обратись в поддержку я не нашел тебя!";
 
         BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
             String message = upd.getMessage().getText();
-            // todo определить пользователя и сохранить чат
-            sendMessage(upd.getMessage().getChatId(), answer);
+
+            Friend friend = getFriend(upd.getMessage().getFrom().getUserName());
+
+            if (friend != null) {
+                friend.setChat(upd.getMessage().getChatId());
+                friendDao.save(friend);
+                sendMessage(upd.getMessage().getChatId(), answer);
+            } else {
+                sendMessage(upd.getMessage().getChatId(), answerError);
+            }
         };
 
         return Reply.of(action,
@@ -190,7 +242,7 @@ public class TelegramBot extends AbilityBot {
         BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
             int blowChance = random.nextInt(10);
             if(blowChance == 9) {
-                List<Friend> friends = application.getFriends();
+                List<Friend> friends = friendDao.findAll();
                 int friendIndex = random.nextInt(friends.size());
                 Friend friendToBlow = friends.get(friendIndex);
                 String message = "Тебе отсосет " + friendToBlow.getNickname();
@@ -251,5 +303,38 @@ public class TelegramBot extends AbilityBot {
     @Override
     public long creatorId() {
         return 0;
+    }
+
+    private Friend getFriend(String name) {
+        List<Friend> friends = friendDao.findAll();
+
+        return friends.stream()
+            .filter(item -> item.getNickname().contains(name) || item.getName().contains(name))
+            .findFirst()
+            .orElse(null);
+    }
+
+    /**
+     * Запись последней команды боту
+     */
+    public Reply setSendValentine() {
+        BiConsumer<BaseAbilityBot, Update> action = (abilityBot, upd) -> {
+            String message = upd.getMessage().getText();
+            Friend friend = getFriend(upd.getMessage().getFrom().getUserName());
+            if (friend != null) {
+                friend.setLastCommand(message);
+                if (friend.getMode().equals(Mode.VALENTINE)) {
+                    friend.setMode(Mode.SEND_VALENTINE);
+                }
+                friendDao.save(friend);
+                sendMessage(upd.getMessage().getChatId(), "Введите сообщение: ", null);
+            }
+        };
+
+        return Reply.of(action,
+            Flag.MESSAGE,
+            Flag.TEXT,
+            Predicates.isUser(friendDao.findAll())
+        );
     }
 }
